@@ -1,0 +1,36 @@
+name = "DeltaRCM"
+uuid = "f44366ae-6fa9-4918-9330-2bb01f68a485"
+version = "1.0.0-DEV"
+authors = ["C. Brenhin Keller <cbkeller@dartmouth.edu> and contributors"]
+
+[deps]
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
+
+[weakdeps]
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
+
+[extensions]
+DeltaRCMJLD2Ext = "JLD2"
+DeltaRCMMakieExt = "Makie"
+DeltaRCMNCDatasetsExt = "NCDatasets"
+
+[compat]
+JLD2 = "0.5.11, 0.6"
+Makie = "0.22, 0.23, 0.24"
+NCDatasets = "0.14"
+PrecompileTools = "1.4.0"
+Random = "1.11.0"
+YAML = "0.4.17"
+julia = "1.13"
+
+[extras]
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["JLD2", "NCDatasets", "Test"]
