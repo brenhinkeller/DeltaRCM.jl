@@ -20,12 +20,19 @@ struct WaterScratch{T}
     path_i::Vector{Int32}
     path_j::Vector{Int32}
     counter::Base.RefValue{Int32}
+    # Step weights per cell, computed on first visit within a water iteration. Parcels only
+    # read the stage/depth/flow fields, so a cell's weights are constant until the next iteration.
+    wtab::Matrix{NTuple{9,T}}
+    wtot::Matrix{T}
+    wstamp::Matrix{Int32}       # `wstamp[cell] == wgen[]` iff `wtab`/`wtot` are current
+    wgen::Base.RefValue{Int32}
 end
 
 function WaterScratch(f::Fields{T}, c::Constants{T}) where {T}
     return WaterScratch{T}(
         f.qxn, f.qyn, f.qwn, f.sfc_sum, f.sfc_visit,
         zeros(Int32, c.Lp, c.Wp), zeros(Int32, c.stepmax + 2), zeros(Int32, c.stepmax + 2), Ref(Int32(0)),
+        fill(ntuple(_ -> zero(T), Val(9)), c.Lp, c.Wp), zeros(T, c.Lp, c.Wp), zeros(Int32, c.Lp, c.Wp), Ref(Int32(0)),
     )
 end
 
@@ -88,6 +95,31 @@ wet neighbour, then into any non-wall neighbour; `total == 0` means it is boxed 
     return map(o -> o ? one(T) : zero(T), open), T(nopen)
 end
 
+"""Start a new weight-cache generation (call whenever the fields the weights read may have changed)."""
+function new_weight_generation!(ch::WaterScratch)
+    g = ch.wgen[] + Int32(1)
+    if g == typemax(Int32)
+        fill!(ch.wstamp, 0)
+        g = Int32(1)
+    end
+    ch.wgen[] = g
+    return nothing
+end
+
+@inline function cached_water_weights(ch::WaterScratch{T}, f::Fields{T}, c::Constants{T}, idx::Int) where {T}
+    g = ch.wgen[]
+    @inbounds if ch.wstamp[idx] == g
+        return ch.wtab[idx], ch.wtot[idx]
+    end
+    w, total = water_weights(f, c, idx)
+    @inbounds begin
+        ch.wtab[idx] = w
+        ch.wtot[idx] = total
+        ch.wstamp[idx] = g
+    end
+    return w, total
+end
+
 # ---- one water parcel ---------------------------------------------------------------------
 
 """
@@ -126,7 +158,7 @@ function route_water_parcel!(ch::WaterScratch{T}, f::Fields{T}, c::Constants{T},
     reached = false
 
     @inbounds while n <= stepmax
-        w, total = water_weights(f, c, cur)
+        w, total = cached_water_weights(ch, f, c, cur)
         total > 0 || break
         k = weighted_pick(rng, w, total)
         ni = ci + DI[k]
@@ -213,6 +245,7 @@ function run_water_parcels!(scratch::WaterScratch{T}, f::Fields{T}, c::Constants
                             seed::UInt64, timestep::Int, iteration::Int, H_SL::T) where {T}
     Np = c.Np_water
     reset!(scratch)
+    new_weight_generation!(scratch)
     rng = Random.Xoshiro()
     for p in 1:Np
         reseed!(rng, seed, STREAM_WATER, timestep, (iteration - 1) * Np + p)

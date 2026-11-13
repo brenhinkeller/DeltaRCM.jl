@@ -251,4 +251,24 @@ const SMALL = (; Length = 1000, Width = 2000, dx = 50, Np_water = 200, Np_sed = 
         run!(w, 5)
         @test w.eta != base.eta
     end
+
+    @testset "weight tables" begin
+        m = DeltaModel(; SMALL...)
+        run!(m, 6)
+        f, c, sc = m.f, m.c, m.scratch
+        # water: cached weights equal a fresh computation, after parcels have run an iteration
+        DeltaRCM.run_water_parcels!(sc, f, c, m.inlet, m.seed, m.iter, 1, m.H_SL)
+        visited = findall(vec(sc.wstamp) .== sc.wgen[])
+        @test length(visited) > 50
+        for idx in visited[1:10:end]
+            w, t = DeltaRCM.water_weights(f, c, idx)
+            @test sc.wtab[idx] == w && sc.wtot[idx] == t
+        end
+        # sediment: the attractiveness table stays consistent with the bed after each phase
+        for kind in (DeltaRCM.Sand(), DeltaRCM.Mud())
+            DeltaRCM.route_sediment_parcels!(kind, f, c, m.inlet, m.seed, m.iter, m.tally)
+            fresh = [DeltaRCM.sediment_attract(kind, f, c, n) for n in eachindex(f.depth)]
+            @test vec(f.sed_attract) == fresh
+        end
+    end
 end

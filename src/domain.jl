@@ -192,6 +192,7 @@ struct Fields{T<:AbstractFloat}
     mod_sed_weight::Matrix{T}
     mod_erosion::Matrix{T}
     mod_stable_weight::Matrix{T}
+    sed_attract::Matrix{T}      # work array: per-cell (depth * mod_sed_weight)^theta for the sediment walk
 end
 
 const FIELD_NAMES = fieldnames(Fields)

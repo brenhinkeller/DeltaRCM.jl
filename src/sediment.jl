@@ -24,26 +24,40 @@ _theta(::Sand, c) = c.theta_sand
 _theta(::Mud, c) = c.theta_mud
 
 """
+    sediment_attract(kind, f, c, n) -> T
+
+How attractive cell `n` is to a sediment parcel: `(depth * mod_sed_weight)^theta`, or zero
+for dry cells and walls. Kept in `f.sed_attract` while sediment is routed (see
+[`fill_sed_attract!`](@ref)); it depends only on the cell itself.
+"""
+@inline function sediment_attract(kind::ParcelKind, f::Fields{T}, c::Constants{T}, n::Int) where {T}
+    @inbounds (f.depth[n] > c.dry_depth) & (f.cell_type[n] != WALL) ?
+        wpow(f.depth[n] * f.mod_sed_weight[n], _theta(kind, c)) : zero(T)
+end
+
+"""Recompute `f.sed_attract` for every cell, at the start of a sediment phase."""
+function fill_sed_attract!(kind::ParcelKind, f::Fields{T}, c::Constants{T}) where {T}
+    A = f.sed_attract
+    @inbounds for n in eachindex(A)
+        A[n] = sediment_attract(kind, f, c, n)
+    end
+    return A
+end
+
+"""
     sediment_weights(kind, f, c, idx) -> (w, total)
 
-Step probabilities for a sediment parcel: flow-direction weight times
-`(depth * mod_sed_weight)^theta`, over wet non-wall neighbours. When all vanish the
+Step probabilities for a sediment parcel: flow-direction weight times the neighbour's
+`sed_attract` (`(depth * mod_sed_weight)^theta` over wet non-wall cells). When all vanish the
 parcel random-walks into any non-wall neighbour weighted by inverse distance.
 """
-@inline function sediment_weights(kind::ParcelKind, f::Fields{T}, c::Constants{T}, idx::Int) where {T}
+@inline function sediment_weights(::ParcelKind, f::Fields{T}, c::Constants{T}, idx::Int) where {T}
     off = c.off
-    depth, ct = f.depth, f.cell_type
+    A, ct = f.sed_attract, f.cell_type
     qx = @inbounds f.qx[idx]
     qy = @inbounds f.qy[idx]
-    dry = c.dry_depth
-    θ = _theta(kind, c)
     w = ntuple(Val(9)) do k
-        @inbounds n = idx + off[k]
-        @inbounds if (k != 5) & (depth[n] > dry) & (ct[n] != WALL)
-            max(zero(T), (qx * DI[k] + qy * DJ[k]) * T(INVDIST2[k])) * wpow(depth[n] * f.mod_sed_weight[n], θ)
-        else
-            zero(T)
-        end
+        @inbounds k != 5 ? max(zero(T), (qx * DI[k] + qy * DJ[k]) * T(INVDIST2[k])) * A[idx+off[k]] : zero(T)
     end
     total = sum(w)
     total > 0 && return w, total
@@ -174,6 +188,7 @@ function route_sediment_parcel!(kind::ParcelKind, f::Fields{T}, c::Constants{T},
             _exported!(tally, kind, Vp_res)
             return nothing
         end
+        d0 = @inbounds f.depth[cur]
         Vp_res = deposit_or_erode!(kind, f, c, cur, Vp_res)
         if it == stepmax
             if c.force_deposit
@@ -183,6 +198,7 @@ function route_sediment_parcel!(kind::ParcelKind, f::Fields{T}, c::Constants{T},
             end
             _lost!(tally, kind, Vp_res)
         end
+        @inbounds f.depth[cur] != d0 && (f.sed_attract[cur] = sediment_attract(kind, f, c, cur))
     end
     return nothing
 end
@@ -198,6 +214,7 @@ function route_sediment_parcels!(kind::ParcelKind, f::Fields{T}, c::Constants{T}
     nsand = floor(Int, c.Np_sed * c.f_bedload)
     n = kind isa Sand ? nsand : floor(Int, c.Np_sed * (1 - c.f_bedload))
     rng = stream(seed, kind isa Sand ? STREAM_SAND : STREAM_MUD, timestep, 0)
+    fill_sed_attract!(kind, f, c)
     for _ in 1:n
         route_sediment_parcel!(kind, f, c, inlet, rng, tally)
     end

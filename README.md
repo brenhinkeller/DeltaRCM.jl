@@ -30,7 +30,7 @@ run_model("config.yaml")                   # `timesteps`/`time`/`time_years`, `m
 
 - **Same interface as pyDeltaRCM.** The same parameters and YAML keys (`Np_water`, `f_bedload`, `save_eta_grids`, …),
   the same `matrix`/`set`/`ensemble` job expansion, `save_dt`, checkpoints and resuming.
-- **Fast.** About 85ms per time step on one thread for the default domain, and zero allocation per step. Ensembles and sweeps can run concurrently (`run_jobs(...; parallel = true)`).
+- **Fast.** About 35 ms per time step on one thread for the default domain, with zero allocations per step. Ensembles and sweeps can run concurrently (`run_jobs(...; parallel = true)`).
 - **Reproducible.** Every parcel draws from its own random stream derived from `(seed, time step, parcel)`, so results
   depend only on `seed`.
 - **Pure Julia**, `Float64` or `Float32` (`DeltaModel{Float32}(...)`).
