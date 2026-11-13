@@ -2,9 +2,14 @@ name: CI
 on:
   push:
     branches:
-      - main
-    tags: ['*']
+      - '**'
+    paths-ignore:
+      - 'README.md'
   pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
   workflow_dispatch:
 concurrency:
   # Skip intermediate builds: always.
