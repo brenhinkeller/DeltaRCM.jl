@@ -5,8 +5,8 @@
 # (first run: `julia --project=examples -e 'using Pkg; Pkg.instantiate()'`)
 #
 # Writes to `examples/output/`:
-#   delta_final.png   one-line snapshot of the bed elevation from `plot_field`
-#   delta_panels.png  a hand-built multi-panel figure of the final state
+#   delta_final.pdf   one-line snapshot of the bed elevation from `plot_field`
+#   delta_panels.pdf  a hand-built multi-panel figure of the final state
 #   delta_growth.gif  an animation of the delta growing (bed, flow speed, surface sand fraction)
 #
 # Loading a Makie backend is all it takes to enable plotting: the plotting methods live in

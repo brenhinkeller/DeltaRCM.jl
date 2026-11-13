@@ -6,7 +6,7 @@
 #
 # Writes to `examples/output/netcdf_demo/`:
 #   pyDeltaRCM_output.nc   the model output, in pyDeltaRCM's file layout
-#   netcdf_timeseries.png  quantities computed from the file: land area and bed volume vs time
+#   netcdf_timeseries.pdf  quantities computed from the file: land area and bed volume vs time
 #
 # Loading NCDatasets is all it takes to enable NetCDF output (it is implemented in a package
 # extension). The `save_*` options and `save_dt` are the same as in pyDeltaRCM, so the same
@@ -81,7 +81,7 @@ L, W = size(model)
 hm = heatmap!(ax3, (0:W-1) .* dx ./ 1000, (0:L-1) .* dx ./ 1000, permutedims(final_eta); colormap = :topo,
               colorrange = (-hb - 0.5, 1.0))
 Colorbar(fig[1, 4], hm; width = 12)
-save(joinpath(outdir, "netcdf_timeseries.png"), fig)
+save(joinpath(outdir, "netcdf_timeseries.pdf"), fig)
 display(fig)
 
 close(ds)
