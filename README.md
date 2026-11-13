@@ -7,11 +7,11 @@
 A fast, pure-Julia reduced-complexity river-delta model: the [DeltaRCM](https://github.com/csdms-contrib/DeltaRCM) of
 Liang et al. ([2015a](https://doi.org/10.5194/esurf-3-67-2015), [2015b](https://doi.org/10.5194/esurf-3-87-2015)), 
 with the configuration and output conventions of [pyDeltaRCM](https://github.com/DeltaRCM/pyDeltaRCM)
-([Moodie et al. (2021)](https://doi.org/10.21105/joss.03398)).
+([Moodie et al. (2021)](https://doi.org/10.21105/joss.03398)), reimplemented in Julia.
 
-The initial implementation is heavily LLM-assisted (Claude code, Sonnet 5.5),
+The initial implementation of this package is heavily LLM-assisted (Claude code, Sonnet 5.5),
 and informed by both the original [DeltaRCM](https://github.com/csdms-contrib/DeltaRCM) (Matlab, GPL) 
-and [pyDeltaRCM](https://github.com/DeltaRCM/pyDeltaRCM) (Python, MIT license) open-source implementations.
+and [pyDeltaRCM](https://github.com/DeltaRCM/pyDeltaRCM) (Python, MIT) open-source implementations.
 We retain the GPL of the original DeltaRCM implementation as a result.
 
 ## Features
@@ -45,7 +45,7 @@ or from a pyDeltaRCM YAML file:
 run_model("config.yaml") # `timesteps`/`time`/`time_years`, `matrix`, `set`, `ensemble`
 ```
 
-see [examples] for more examples, including plotting.
+see [examples] for more examples, including plotting, checkpointing, and NetCDF output.
 
 ## Differences from pyDeltaRCM
 

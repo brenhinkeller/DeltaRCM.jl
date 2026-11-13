@@ -1,6 +1,6 @@
 # Plotting a DeltaRCM model with Makie, and animating a delta as it grows.
 #
-#   julia --project=examples examples/demo.jl
+#   julia --project=examples examples/plotting_example.jl
 #
 # (first run: `julia --project=examples -e 'using Pkg; Pkg.instantiate()'`)
 #
@@ -80,7 +80,8 @@ end
 
 ## --- snapshots of the final state ------------------------------------------------------------------
 # `plot_field` is the one-liner: a heatmap of any model field, labelled with the model time.
-save(joinpath(outdir, "delta_final.png"), plot_field(model, :eta))
+save(joinpath(outdir, "delta_final.pdf"), plot_field(model, :eta))
+display(plot_field(model, :eta))
 
 # A custom figure from the same arrays: the final bed together with the water depth and the
 # net deposition since the start (erosion, mainly in the channels, plots as the palest colour).
@@ -96,7 +97,8 @@ for (col, (name, data, cmap, range)) in enumerate((
     Colorbar(fig2[1, 2col], hm; width = 12)
 end
 Label(fig2[0, 1:6], "after $(round(days(model); digits = 1)) days"; fontsize = 20)
-save(joinpath(outdir, "delta_panels.png"), fig2)
+save(joinpath(outdir, "delta_panels.pdf"), fig2)
+display(fig2)
 
 @info "Wrote" outdir readdir(outdir)
 
