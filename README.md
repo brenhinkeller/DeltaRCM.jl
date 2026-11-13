@@ -24,7 +24,16 @@ We retain the GPL of the original DeltaRCM implementation as a result.
 - **Customizable** through callbacks (`hooks = (; before_water = m -> ...)`) and the `mod_*` weighting arrays.
 
 ## Usage
-
+The package is not currently registered, but can be installed by URL in the Julia package manage, either in `pkg>` mode at the REPL
+```julia
+pkg> add https://github.com/brenhinkeller/DeltaRCM.jl
+```
+or explicitly via Pkg.jl
+```julia
+using Pkg
+Pkg.add("https://github.com/brenhinkeller/DeltaRCM.jl")
+```
+then
 ```julia
 using DeltaRCM
 
@@ -45,7 +54,7 @@ or from a pyDeltaRCM YAML file:
 run_model("config.yaml") # `timesteps`/`time`/`time_years`, `matrix`, `set`, `ensemble`
 ```
 
-see [examples] for more examples, including plotting, checkpointing, and NetCDF output.
+see [examples](examples/) for more examples, including plotting, checkpointing, and NetCDF output.
 
 ## Differences from pyDeltaRCM
 
