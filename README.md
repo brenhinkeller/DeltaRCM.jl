@@ -1,4 +1,8 @@
 # DeltaRCM.jl
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://brenhinkeller.github.io/DeltaRCM.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://brenhinkeller.github.io/DeltaRCM.jl/dev/)
+[![Build Status](https://github.com/brenhinkeller/DeltaRCM.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/brenhinkeller/DeltaRCM.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/brenhinkeller/DeltaRCM.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/brenhinkeller/DeltaRCM.jl)
 
 A fast, pure-Julia reduced-complexity river-delta model: the [DeltaRCM](https://github.com/csdms-contrib/DeltaRCM) of
 Liang et al. ([2015a](https://doi.org/10.5194/esurf-3-67-2015), [2015b](https://doi.org/10.5194/esurf-3-87-2015)), 
@@ -24,15 +28,21 @@ We retain the GPL of the original DeltaRCM implementation as a result.
 ```julia
 using DeltaRCM
 
-model = DeltaModel(; Length = 5000, Width = 10000, dx = 50, seed = 42)   # pyDeltaRCM parameter names
-run!(model; timesteps = 100)
-model.eta                                                                 # bed elevation, (L, W)
+# Note parameter names as in pyDeltaRCM
+model = DeltaModel(; 
+    Length = 5000, 
+    Width = 10000, 
+    dx = 50,
+    seed = 42,
+)
+run!(model; timesteps = 100)    # Run the model for 100 timesteps
+model.eta                       # Resulting bed elevation, (L, W)
 ```
 
 or from a pyDeltaRCM YAML file:
 
 ```julia
-run_model("config.yaml")                   # `timesteps`/`time`/`time_years`, `matrix`, `set`, `ensemble`
+run_model("config.yaml") # `timesteps`/`time`/`time_years`, `matrix`, `set`, `ensemble`
 ```
 
 see [examples] for more examples, including plotting.
@@ -40,9 +50,3 @@ see [examples] for more examples, including plotting.
 ## Differences from pyDeltaRCM
 
 Results agree statistically (shoreline position, land area, flow speed and depth, surface sand fraction over ensembles), but not trajectory-for-trajectory: the random numbers differ, and a handful of potentially unintentional quirks of the original implementations were deliberately not reproduced (see the documentation for the full list).
-
-
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://brenhinkeller.github.io/DeltaRCM.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://brenhinkeller.github.io/DeltaRCM.jl/dev/)
-[![Build Status](https://github.com/brenhinkeller/DeltaRCM.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/brenhinkeller/DeltaRCM.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/brenhinkeller/DeltaRCM.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/brenhinkeller/DeltaRCM.jl)
