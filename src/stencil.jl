@@ -46,20 +46,24 @@ const STREAM_START = 4
 """
 Pick index `k` with probability `w[k] / total`, where `total == sum(w)` is supplied.
 Only strictly positive weights can be chosen, even under floating-point round-off.
+
+Branch-free: the index is the number of cumulative sums that do not exceed the uniform draw
+(plus one), which avoids the mispredicted early exit of a linear scan. Equivalent to
+scanning the cumulative sums left to right.
 """
 @inline function weighted_pick(rng, w::NTuple{9,T}, total::T) where {T}
     u = rand(rng, T) * total
-    acc = zero(T)
-    last = 0
-    @inbounds for k in 1:9
-        wk = w[k]
-        if wk > 0
-            last = k
-            acc += wk
-            u < acc && return k
+    @inbounds begin
+        c1 = w[1]; c2 = c1 + w[2]; c3 = c2 + w[3]; c4 = c3 + w[4]; c5 = c4 + w[5]
+        c6 = c5 + w[6]; c7 = c6 + w[7]; c8 = c7 + w[8]; c9 = c8 + w[9]
+        k = 1 + (u >= c1) + (u >= c2) + (u >= c3) + (u >= c4) + (u >= c5) + (u >= c6) + (u >= c7) + (u >= c8)
+        k <= 9 && !(k == 9 && u >= c9) && return k
+        # u reached the total through round-off: take the last positive weight
+        for j in 9:-1:1
+            w[j] > 0 && return j
         end
     end
-    return last
+    return 0
 end
 
 @inline wpow(x::T, θ) where {T} = θ == 1 ? x : θ == 2 ? x * x : x^T(θ)

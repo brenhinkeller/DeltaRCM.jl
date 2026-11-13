@@ -1,7 +1,8 @@
 """
     DeltaModel{T}(config; hooks, kwargs...)
 
-A delta model with state at precision `T` (default `Float64`). `config` may be a
+A delta model with state at precision `T` (default `Float64`; `Float32` is accurate to ~1e-5
+per step in mass balance and slightly faster; `Float16` runs but is not recommended and warns). `config` may be a
 [`DeltaParameters`](@ref), a path to a pyDeltaRCM-style YAML file, a `Dict`, or omitted
 (then everything comes from keywords):
 
@@ -39,6 +40,7 @@ end
 
 function DeltaModel{T}(params::DeltaParameters; hooks = (;)) where {T<:AbstractFloat}
     _check_hooks(hooks)
+    T === Float16 && @warn "Float16 is not recommended: it cannot resolve a single parcel's deposit against the bed elevation, so mass is not conserved (errors of ~20% per step in the default setup) and the delta is distorted; it is also no faster. Use Float32 or Float64." maxlog = 1
     p = resolve_parameters(params)
     c = Constants{T}(p)
     f = Fields{T}(c.Lp, c.Wp)

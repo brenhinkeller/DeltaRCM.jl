@@ -58,6 +58,7 @@ const SMALL = (; Length = 1000, Width = 2000, dx = 50, Np_water = 200, Np_sed = 
     @testset "water weights" begin
         m = DeltaModel(; SMALL...)
         f, c = m.f, m.c
+        DeltaRCM.fill_water_attract!(f, c)
         # a cell in the channel mouth: row L0 (the last channel row), centre column
         idx = (c.L0 + 1) + (c.CTR + 1 - 1) * c.Lp
         w, tot = DeltaRCM.water_weights(f, c, idx)
@@ -109,6 +110,11 @@ const SMALL = (; Length = 1000, Width = 2000, dx = 50, Np_water = 200, Np_sed = 
         m = DeltaModel{Float32}(; SMALL...)
         run!(m, 5)
         @test eltype(m.eta) == Float32 && all(isfinite, m.eta)
+    end
+
+    @testset "Float16 warns" begin
+        # `maxlog = 1` warns once per session, so check via a fresh call site
+        @test_logs (:warn, r"Float16 is not recommended") DeltaModel{Float16}(; SMALL...)
     end
 
     @testset "sea level rise and subsidence" begin

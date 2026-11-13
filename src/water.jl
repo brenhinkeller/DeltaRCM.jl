@@ -55,14 +55,12 @@ wet neighbour, then into any non-wall neighbour; `total == 0` means it is boxed 
 """
 @inline function water_weights(f::Fields{T}, c::Constants{T}, idx::Int) where {T}
     off = c.off
-    stage, depth, ct = f.stage, f.depth, f.cell_type
+    A, stage, ct = f.water_attract, f.stage, f.cell_type
     s0 = @inbounds stage[idx]
     qx = @inbounds f.qx[idx]
     qy = @inbounds f.qy[idx]
-    dry = c.dry_depth
     ok = ntuple(Val(9)) do k
-        @inbounds n = idx + off[k]
-        @inbounds (k != 5) & (depth[n] > dry) & (ct[n] != WALL)
+        @inbounds (k != 5) & (A[idx+off[k]] > -T(Inf))
     end
     ws = ntuple(Val(9)) do k
         @inbounds ok[k] ? max(zero(T), (s0 - stage[idx+off[k]]) * T(INVDIST[k])) : zero(T)
@@ -74,11 +72,9 @@ wet neighbour, then into any non-wall neighbour; `total == 0` means it is boxed 
     ns = ss > 0 ? inv(ss) : zero(T)
     ni = si > 0 ? inv(si) : zero(T)
     γ = c.gamma
-    θ = c.theta_water
     w = ntuple(Val(9)) do k
         if ok[k]
-            @inbounds n = idx + off[k]
-            @inbounds max(zero(T), (γ * ws[k] * ns + (1 - γ) * wi[k] * ni) * wpow(depth[n] * f.mod_water_weight[n], θ))
+            @inbounds max(zero(T), (γ * ws[k] * ns + (1 - γ) * wi[k] * ni) * A[idx+off[k]])
         else
             zero(T)
         end
@@ -94,6 +90,21 @@ wet neighbour, then into any non-wall neighbour; `total == 0` means it is boxed 
     nopen = count(open)
     return map(o -> o ? one(T) : zero(T), open), T(nopen)
 end
+
+"""
+Fill `f.water_attract` from the current depth: `(depth * mod_water_weight)^theta_water` for cells
+a water parcel may enter (wet, not a wall), `-Inf` elsewhere. Call at the start of each water
+iteration, since depth is updated between iterations.
+"""
+function fill_water_attract!(f::Fields{T}, c::Constants{T}) where {T}
+    A = f.water_attract
+    θ = c.theta_water
+    @inbounds for n in eachindex(A)
+        A[n] = (f.depth[n] > c.dry_depth) & (f.cell_type[n] != WALL) ? wpow(f.depth[n] * f.mod_water_weight[n], θ) : -T(Inf)
+    end
+    return A
+end
+
 
 """Start a new weight-cache generation (call whenever the fields the weights read may have changed)."""
 function new_weight_generation!(ch::WaterScratch)
@@ -246,6 +257,7 @@ function run_water_parcels!(scratch::WaterScratch{T}, f::Fields{T}, c::Constants
     Np = c.Np_water
     reset!(scratch)
     new_weight_generation!(scratch)
+    fill_water_attract!(f, c)
     rng = Random.Xoshiro()
     for p in 1:Np
         reseed!(rng, seed, STREAM_WATER, timestep, (iteration - 1) * Np + p)
@@ -284,20 +296,24 @@ function smooth_free_surface!(f::Fields{T}, c::Constants{T}) where {T}
     src, dst = f.Hnew, f.Hsmth
     copyto!(dst, src)
     C = c.Csmooth
-    ct, mask = f.cell_type, f.open_mask
+    mask, cnt = f.open_mask, f.smooth_cnt
+    o1, o2, o3, o4, o6, o7, o8, o9 = off[1], off[2], off[3], off[4], off[6], off[7], off[8], off[9]
     for _ in 1:Nsmooth
-        @inbounds for j in 2:Wp-1, i in 2:Lp-1
-            idx = i + (j - 1) * Lp
-            t = ct[idx]
-            if t != WALL && t != EDGE
-                s = zero(T); cnt = zero(T)
-                for k in (1, 2, 3, 4, 6, 7, 8, 9)
-                    n = idx + off[k]
-                    m = mask[n]
-                    s += m * src[n]
-                    cnt += m
-                end
-                dst[idx] = cnt > 0 ? C * src[idx] + (1 - C) * s / cnt : src[idx]
+        @inbounds for j in 2:Wp-1
+            base = (j - 1) * Lp
+            @simd for i in 2:Lp-1
+                idx = i + base
+                s = mask[idx+o1] * src[idx+o1]
+                s += mask[idx+o2] * src[idx+o2]
+                s += mask[idx+o3] * src[idx+o3]
+                s += mask[idx+o4] * src[idx+o4]
+                s += mask[idx+o6] * src[idx+o6]
+                s += mask[idx+o7] * src[idx+o7]
+                s += mask[idx+o8] * src[idx+o8]
+                s += mask[idx+o9] * src[idx+o9]
+                n = cnt[idx]
+                # cells that are not smoothed (cnt == 0) keep their value
+                dst[idx] = ifelse(n > 0, C * src[idx] + (1 - C) * s / n, src[idx])
             end
         end
         src, dst = dst, src

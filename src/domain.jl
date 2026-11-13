@@ -192,7 +192,9 @@ struct Fields{T<:AbstractFloat}
     mod_sed_weight::Matrix{T}
     mod_erosion::Matrix{T}
     mod_stable_weight::Matrix{T}
+    smooth_cnt::Matrix{T}       # open neighbours (of 8) of each smoothed cell; 0 for walls, edges and the halo
     sed_attract::Matrix{T}      # work array: per-cell (depth * mod_sed_weight)^theta for the sediment walk
+    water_attract::Matrix{T}    # work array: per-cell (depth * mod_water_weight)^theta, -Inf where a water parcel cannot enter
 end
 
 const FIELD_NAMES = fieldnames(Fields)
@@ -205,6 +207,27 @@ function Fields{T}(Lp::Int, Wp::Int) where {T}
         n in UNIT_FIELDS ? ones(T, Lp, Wp) : zeros(T, Lp, Wp)
     end
     return Fields{T}(vals...)
+end
+
+"""
+Neighbour counts for the surface smoothing: for every cell that is smoothed (not a wall or
+edge), the number of its 8 neighbours that are not walls; 0 for the others. Cell types do not
+change during a run, so this is computed once.
+"""
+function init_smoothing!(f::Fields{T}, c::Constants{T}) where {T}
+    (; Lp, Wp, off) = c
+    fill!(f.smooth_cnt, 0)
+    @inbounds for j in 2:Wp-1, i in 2:Lp-1
+        idx = i + (j - 1) * Lp
+        t = f.cell_type[idx]
+        (t == WALL || t == EDGE) && continue
+        n = zero(T)
+        for k in (1, 2, 3, 4, 6, 7, 8, 9)
+            n += f.open_mask[idx+off[k]]
+        end
+        f.smooth_cnt[idx] = n
+    end
+    return nothing
 end
 
 """
@@ -244,6 +267,7 @@ function init_domain!(f::Fields{T}, c::Constants{T}) where {T}
     f.eta_init .= f.eta
     f.sand_frac .= c.sand_frac_bc
     f.active_layer .= c.sand_frac_bc
+    init_smoothing!(f, c)
     return [j + 1 for j in 1:W if f.cell_type[2, j+1] == CHANNEL]
 end
 
