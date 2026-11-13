@@ -1,0 +1,6 @@
+[deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+DeltaRCM = "f44366ae-6fa9-4918-9330-2bb01f68a485"
+
+[sources]
+DeltaRCM = {path = ".."}

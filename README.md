@@ -26,23 +26,20 @@ or from a pyDeltaRCM YAML file:
 run_model("config.yaml")                   # `timesteps`/`time`/`time_years`, `matrix`, `set`, `ensemble`
 ```
 
+see [examples] for more examples, including plotting.
+
 ## Features
 
-- **Same interface as pyDeltaRCM.** The same parameters and YAML keys (`Np_water`, `f_bedload`, `save_eta_grids`, …),
-  the same `matrix`/`set`/`ensemble` job expansion, `save_dt`, checkpoints and resuming.
-- **Fast.** About 35 ms per time step on one thread for the default domain, with zero allocations per step. Ensembles and sweeps can run concurrently (`run_jobs(...; parallel = true)`).
-- **Reproducible.** Every parcel draws from its own random stream derived from `(seed, time step, parcel)`, so results
-  depend only on `seed`.
+- **Same interface as pyDeltaRCM.** The same parameters and YAML keys (`Np_water`, `f_bedload`, `save_eta_grids`, …), the same `matrix`/`set`/`ensemble` job expansion, `save_dt`, checkpoints and resuming.
+- **Fast.** About 33 ms per time step on one thread for the default domain (100 x 200 grid, Apple M1 Max), with zero allocations per step. Ensembles and sweeps can run concurrently (`run_jobs(...; parallel = true)`).
+- **Reproducible.** Every parcel draws from its own random stream derived from `(seed, time step, parcel)`, so results depend only on `seed`.
 - **Pure Julia**, `Float64` or `Float32` (`DeltaModel{Float32}(...)`).
-- **NetCDF output** in pyDeltaRCM's layout (`using NCDatasets`), readable by existing xarray/netCDF4 workflows;
-  **checkpoints** with JLD2; **plots** and `save_*_figs` with Makie.
+- **NetCDF output** in pyDeltaRCM's layout (`using NCDatasets`), readable by existing xarray/netCDF4 workflows; **checkpoints** with JLD2; **plots** and `save_*_figs` with Makie.
 - **Customizable** through callbacks (`hooks = (; before_water = m -> ...)`) and the `mod_*` weighting arrays.
 
 ## Differences from pyDeltaRCM
 
-Results agree statistically (shoreline position, land area, flow speed and depth, surface sand fraction over
-ensembles), but not trajectory-for-trajectory: the random numbers differ, and a handful of quirks of
-the original implementations were deliberately not reproduced (see the documentation for the full list).
+Results agree statistically (shoreline position, land area, flow speed and depth, surface sand fraction over ensembles), but not trajectory-for-trajectory: the random numbers differ, and a handful of potentially unintentional quirks of the original implementations were deliberately not reproduced (see the documentation for the full list).
 
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://brenhinkeller.github.io/DeltaRCM.jl/stable/)
