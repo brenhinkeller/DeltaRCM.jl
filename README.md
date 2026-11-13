@@ -8,10 +8,11 @@ Liang et al. ([2015a](https://doi.org/10.5194/esurf-3-67-2015), [2015b](https://
 with the configuration and output conventions of [pyDeltaRCM](https://github.com/DeltaRCM/pyDeltaRCM)
 ([Moodie et al. (2021)](https://doi.org/10.21105/joss.03398)), reimplemented in Julia.
 
-The initial implementation of this package is heavily LLM-assisted (Claude code, Sonnet 5.5),
+The initial draft implementation of this package was heavily LLM-assisted (Claude code, Sonnet 5.5),
 and informed by both the original [DeltaRCM](https://github.com/csdms-contrib/DeltaRCM) (Matlab, GPL) 
 and [pyDeltaRCM](https://github.com/DeltaRCM/pyDeltaRCM) (Python, MIT) open-source implementations.
 We retain the GPL of the original DeltaRCM implementation as a result.
+Subsequent development, if any, is likely to be more human-driven.
 
 ## Features
 
